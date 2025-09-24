@@ -5,8 +5,7 @@ import javax.xml.parsers.DocumentBuilderFactory;
 import java.io.File;
 
 public class TokenLoader {
-
-    public static String loadToken() throws Exception {
+    private static Document loadDocument() throws Exception {
         File xmlFile = new File("src/main/resources/config.xml");
 
         if (!xmlFile.exists()) {
@@ -21,13 +20,11 @@ public class TokenLoader {
                 .newDocumentBuilder()
                 .parse(xmlFile);
         doc.getDocumentElement().normalize();
+        return doc;
+    }
 
-        if (doc.getElementsByTagName("token").getLength() == 0) {
-            throw new IllegalStateException(
-                    "⚠️ No <token> element found in config.xml!\n" +
-                            "Make sure your config.xml looks like config.example.xml."
-            );
-        }
+    public static String loadToken() throws Exception {
+        Document doc = loadDocument();
 
         String token = doc.getElementsByTagName("token")
                 .item(0)
@@ -42,5 +39,21 @@ public class TokenLoader {
         }
 
         return token;
+    }
+
+    public static String loadGuildId() throws Exception {
+        Document doc = loadDocument();
+        if (doc.getElementsByTagName("guildId").getLength() == 0) {
+            return null;
+        }
+        return doc.getElementsByTagName("guildId").item(0).getTextContent().trim();
+    }
+
+    public static String loadMode() throws Exception {
+        Document doc = loadDocument();
+        if (doc.getElementsByTagName("mode").getLength() == 0) {
+            return "prod";
+        }
+        return doc.getElementsByTagName("mode").item(0).getTextContent().trim().toLowerCase();
     }
 }

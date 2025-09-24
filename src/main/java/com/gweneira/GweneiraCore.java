@@ -3,6 +3,7 @@ package com.gweneira;
 import com.gweneira.commands.SlashCommand;
 import net.dv8tion.jda.api.JDABuilder;
 import net.dv8tion.jda.api.entities.Activity;
+import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import net.dv8tion.jda.api.requests.GatewayIntent;
@@ -30,10 +31,15 @@ public class GweneiraCore extends ListenerAdapter {
                     }
                 })
                 .collect(Collectors.toList());
+
+        System.out.println("✅ Loaded commands: " +
+                commands.stream().map(c -> c.getCommandData().getName()).toList());
     }
 
     public static void main(String[] args) throws Exception {
-        String token = TokenLoader.loadToken(); // your existing token loader
+        String token = TokenLoader.loadToken();
+        String mode = TokenLoader.loadMode();
+        String guildId = TokenLoader.loadGuildId();
 
         GweneiraCore core = new GweneiraCore();
 
@@ -47,11 +53,47 @@ public class GweneiraCore extends ListenerAdapter {
                 .setActivity(Activity.playing("With Gweneira ❄️"));
 
         var jda = builder.build();
+        jda.awaitReady();
 
         //register slash commands
-        jda.updateCommands().addCommands(
-                core.commands.stream().map(SlashCommand::getCommandData).toList()
-        ).queue();
+        if ("dev".equals(mode) && guildId != null && !guildId.isEmpty()) {
+            System.out.println("⚡ Dev mode: Clearing global & setting guild commands...");
+
+            //force clear all global commands
+            jda.updateCommands().addCommands().queue(success ->
+                    System.out.println("🧹 Cleared ALL global commands."));
+
+            //force clear then set guild commands
+            jda.getGuildById(guildId).updateCommands().addCommands().queue(success ->
+                    System.out.println("🧹 Cleared guild commands for " + guildId));
+
+            jda.getGuildById(guildId).updateCommands()
+                    .addCommands(core.commands.stream().map(SlashCommand::getCommandData).toList())
+                    .queue(success ->
+                            System.out.println("✅ Registered guild commands: " +
+                                    core.commands.stream().map(c -> c.getCommandData().getName()).toList())
+                    );
+
+        } else {
+            System.out.println("🌍 Prod mode: Clearing guilds & setting global commands...");
+
+            //force clear all guild commands
+            jda.getGuilds().forEach(guild ->
+                    guild.updateCommands().addCommands().queue(success ->
+                            System.out.println("🧹 Cleared guild commands in " + guild.getName()))
+            );
+
+            //force clear then set global commands
+            jda.updateCommands().addCommands().queue(success ->
+                    System.out.println("🧹 Cleared ALL global commands."));
+
+            jda.updateCommands()
+                    .addCommands(core.commands.stream().map(SlashCommand::getCommandData).toList())
+                    .queue(success ->
+                            System.out.println("✅ Registered global commands: " +
+                                    core.commands.stream().map(c -> c.getCommandData().getName()).toList())
+                    );
+        }
     }
 
     @Override

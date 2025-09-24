@@ -2,4 +2,10 @@
 <config>
     <!-- Replace this with your own bot token -->
     <token>YOUR-BOT-TOKEN-HERE</token>
+
+    <!-- Guild ID for testing (only needed in dev mode) -->
+    <guildId>YOUR-GUILD-ID-HERE</guildId>
+
+    <!-- Mode: "dev" for guild commands, "prod" for global commands -->
+    <mode>dev</mode>
 </config>

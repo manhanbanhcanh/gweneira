@@ -45,11 +45,17 @@ cd gweneira
 ```bash
 cp src/main/resources/config.example.xml src/main/resources/config.xml
 ```
-- Open `src/main/resource/config.xml` and replace the placeholder with your bot token:
+- Open `src/main/resource/config.xml` and replace the placeholder with your own:
 ```xml
 <config>
+    <!-- Replace this with your own bot token -->
     <token>YOUR-BOT-TOKEN-HERE</token>
-</config>
+
+    <!-- Guild ID for testing (only needed in dev mode) -->
+    <guildId>YOUR-GUILD-ID-HERE</guildId>
+
+    <!-- Mode: "dev" for guild commands, "prod" for global commands -->
+    <mode>dev</mode>
 ```
 > 🚫 Please don't commit your real `config.xml` (it's already ignored in `.gitignore`)
 

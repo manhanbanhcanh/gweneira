@@ -1,6 +1,7 @@
 package com.gweneira;
 
 import com.gweneira.commands.SlashCommand;
+import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
 import net.dv8tion.jda.api.entities.Activity;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
@@ -11,13 +12,17 @@ import org.reflections.Reflections;
 import java.util.Set;
 import java.util.List;
 import java.util.stream.Collectors;
+import java.util.Random;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 public class GweneiraCore extends ListenerAdapter {
 
     private final List<SlashCommand> commands;
 
     public GweneiraCore() {
-        //auto-discover all commands in com.gweneira.commands
+        // auto-discover all commands in com.gweneira.commands
         Reflections reflections = new Reflections("com.gweneira.commands");
         Set<Class<? extends SlashCommand>> commandClasses = reflections.getSubTypesOf(SlashCommand.class);
 
@@ -49,10 +54,21 @@ public class GweneiraCore extends ListenerAdapter {
                 GatewayIntent.GUILD_MESSAGE_REACTIONS
         );
 
-        builder.addEventListeners(core)
-                .setActivity(Activity.playing("With Gweneira ❄️"));
+        // all possible activities
+        List<Activity> activities = List.of(
+                Activity.playing("with snowflakes ❄️"),
+                Activity.watching("over Gweneira's magic ✨"),
+                Activity.listening("to lo-fi beats 🎶"),
+                Activity.competing("the study tournament 🏆")
+        );
 
-        //register commands that are also event listener
+        Random random = new Random();
+        ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
+
+        builder.addEventListeners(core)
+                .setActivity(Activity.customStatus("/gweneira ❄️")); // initial status
+
+        // register commands that are also event listener
         for (SlashCommand cmd : core.commands) {
             if (cmd instanceof ListenerAdapter listener) {
                 builder.addEventListeners(listener);
@@ -61,18 +77,33 @@ public class GweneiraCore extends ListenerAdapter {
             }
         }
 
-        var jda = builder.build();
+        JDA jda = builder.build();
         jda.awaitReady();
 
-        //register slash commands
+        //schedule random activity updates every 1 minute
+        ScheduledExecutorService scheduling = Executors.newSingleThreadScheduledExecutor();
+
+        scheduling.scheduleAtFixedRate(new Runnable() {
+            private int index = 0; // track current position
+
+            @Override
+            public void run() {
+                Activity nextActivity = activities.get(index);
+                jda.getPresence().setActivity(nextActivity);
+                System.out.println("🔄 Changed activity to: " + nextActivity.getName());
+
+                // move to next, loop back when reaching the end
+                index = (index + 1) % activities.size();
+            }
+        }, 0, 1, TimeUnit.MINUTES); // starts immediately, updates every 1 minute
+
+        // register slash commands
         if ("dev".equals(mode) && guildId != null && !guildId.isEmpty()) {
             System.out.println("⚡ Dev mode: Clearing global & setting guild commands...");
 
-            //force clear all global commands
             jda.updateCommands().addCommands().queue(success ->
                     System.out.println("🧹 Cleared ALL global commands."));
 
-            //force clear then set guild commands
             jda.getGuildById(guildId).updateCommands().addCommands().queue(success ->
                     System.out.println("🧹 Cleared guild commands for " + guildId));
 
@@ -86,13 +117,11 @@ public class GweneiraCore extends ListenerAdapter {
         } else {
             System.out.println("🌍 Prod mode: Clearing guilds & setting global commands...");
 
-            //force clear all guild commands
             jda.getGuilds().forEach(guild ->
                     guild.updateCommands().addCommands().queue(success ->
                             System.out.println("🧹 Cleared guild commands in " + guild.getName()))
             );
 
-            //force clear then set global commands
             jda.updateCommands().addCommands().queue(success ->
                     System.out.println("🧹 Cleared ALL global commands."));
 

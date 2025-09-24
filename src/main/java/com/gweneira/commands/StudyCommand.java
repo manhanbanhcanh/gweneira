@@ -7,6 +7,7 @@ import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEve
 import net.dv8tion.jda.api.events.message.react.MessageReactionAddEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import net.dv8tion.jda.api.interactions.commands.build.Commands;
+import net.dv8tion.jda.api.interactions.commands.build.CommandData;
 
 import java.awt.*;
 import java.time.Duration;
@@ -26,8 +27,8 @@ public class StudyCommand extends ListenerAdapter implements SlashCommand {
     private final Map<Long, SessionData> activeSessions = new HashMap<>();
 
     @Override
-    public net.dv8tion.jda.api.interactions.commands.build.CommandData getCommandData() {
-        return Commands.slash("study", "Start, pause, resume, and stop a study session with reactions");
+    public CommandData getCommandData() {
+        return Commands.slash("study", "Start, pause, resume, and stop a study session with reactions 📝");
     }
 
     @Override
@@ -40,13 +41,14 @@ public class StudyCommand extends ListenerAdapter implements SlashCommand {
                         "React with:\n" +
                                 PAUSE_EMOJI + " to pause\n" +
                                 RESUME_EMOJI + " to continue\n" +
-                                STOP_EMOJI + " to stop"
+                                STOP_EMOJI + " to stop\n\n" +
+                        "⚠️ Only **" + event.getUser().getAsMention() + "** can control this session."
                 )
                 .setColor(new Color(118,255,251))
                 .setTimestamp(Instant.now());
 
         event.getHook().sendMessageEmbeds(embed.build()).queue(message -> {
-            activeSessions.put(message.getIdLong(), new SessionData());
+            activeSessions.put(message.getIdLong(), new SessionData(event.getUser().getIdLong())); //save session owner's data
 
             message.addReaction(Emoji.fromUnicode(PAUSE_EMOJI)).queue();
             message.addReaction(Emoji.fromUnicode(RESUME_EMOJI)).queue();
@@ -62,9 +64,16 @@ public class StudyCommand extends ListenerAdapter implements SlashCommand {
         Long messageId = message.getIdLong();
 
         if (!activeSessions.containsKey(messageId)) return;
+        SessionData session = activeSessions.get(messageId);
+
+        //only allow the session owner
+        if (!event.getUserId().equals(String.valueOf(session.getOwnerId()))) {
+            event.getReaction().removeReaction(event.getUser()).queue(); // clean up unauthorized reaction
+            return;
+        }
+
         String emoji = event.getReaction().getEmoji().getName();
 
-        SessionData session = activeSessions.get(messageId);
 
         switch (emoji) {
             case PAUSE_EMOJI -> {
@@ -80,20 +89,30 @@ public class StudyCommand extends ListenerAdapter implements SlashCommand {
                 }
             }
             case STOP_EMOJI -> {
+                if (session.isEnded()) {
+                    // already stopped, remove the user’s reaction
+                    event.getReaction().removeReaction(event.getUser()).queue();
+                    return;
+                }
+
                 session.stop();
                 long totalSeconds = session.getTotalDurationSeconds();
                 String formatted = formatDuration(totalSeconds);
 
                 EmbedBuilder finished = new EmbedBuilder()
                         .setTitle("🧠🌟 Study Session Ended")
-                        .setDescription("This session lasted **" + formatted + "**.")
+                        .setDescription(
+                                "This session lasted **" + formatted + "**.\n\n" +
+                                "Session controlled by <@" + session.getOwnerId() + ">."
+                        )
                         .setColor(new Color(238,118,255))
                         .setTimestamp(Instant.now());
 
                 message.editMessageEmbeds(finished.build()).queue();
-                message.clearReactions().queue();
                 activeSessions.remove(messageId);
-                message.addReaction(Emoji.fromUnicode(LOVELY_EMOJI)).queue();
+                message.clearReactions().queue(success ->
+                        message.addReaction(Emoji.fromUnicode(LOVELY_EMOJI)).queue()
+                        );
             }
         }
 
@@ -101,13 +120,16 @@ public class StudyCommand extends ListenerAdapter implements SlashCommand {
     }
 
     private void updateEmbed(Message message, String title, Color color) {
+        SessionData session = activeSessions.get(message.getIdLong());
+
         EmbedBuilder embed = new EmbedBuilder()
                 .setTitle(title)
                 .setDescription(
                         "React with:\n" +
                                 PAUSE_EMOJI + " to pause\n" +
                                 RESUME_EMOJI + " to continue\n" +
-                                STOP_EMOJI + " to stop"
+                                STOP_EMOJI + " to stop\n\n" +
+                                "⚠️ Only <@" + session.getOwnerId() + "> can control this session."
                 )
                 .setColor(color)
                 .setTimestamp(Instant.now());
@@ -132,14 +154,21 @@ public class StudyCommand extends ListenerAdapter implements SlashCommand {
 
     // --- SessionData class ---
     private static class SessionData {
+        private final long ownerId;
         private Instant start;
         private Duration accumulated;
         private boolean paused;
+        private boolean ended;
 
-        public SessionData() {
+        public SessionData(long ownerId) {
+            this.ownerId = ownerId;
             this.start = Instant.now();
             this.accumulated = Duration.ZERO;
             this.paused = false;
+        }
+
+        public long getOwnerId() {
+            return ownerId;
         }
 
         public void pause() {
@@ -169,6 +198,10 @@ public class StudyCommand extends ListenerAdapter implements SlashCommand {
 
         public boolean isPaused() {
             return paused;
+        }
+
+        public boolean isEnded() {
+            return ended;
         }
     }
 }

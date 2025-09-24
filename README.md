@@ -1,4 +1,10 @@
-# ❄️ Gweneira Discord Bot
+![Issues](https://badgen.net/github/issues/manhanbanhcanh/gweneira?color=red)
+![Commits](https://badgen.net/github/commits/manhanbanhcanh/gweneira?color=green)
+[![GitHub stars](https://img.shields.io/github/stars/manhanbanhcanh/gweneira)](https://github.com/manhanbanhcanh/modular-todo-list)
+[![GitHub stars](https://img.shields.io/badge/contact-bento-blue)](https://bento.me/ducmanh)
+[![Java](https://badgen.net/badge/Java/21/orange)](https://www.oracle.com/java/)
+
+# ❄️ Gweneira - Discord Bot
 
 Gweneira is a simple, beginner-friendly Discord bot built in **Java** using the [JDA](https://github.com/discord-jda/JDA) library.  
 This project is designed to be easy to set up, extend, and learn from.
@@ -59,5 +65,6 @@ gradlew.bat run
 
 If you have done everything correctly, your bot should come online and display its status ``Playing with Gweneira ❄️``
 
+---
 
-
+👤 Author: [bento.me/ducmanh](https://bento.me/ducmanh)

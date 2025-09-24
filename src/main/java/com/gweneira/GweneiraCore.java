@@ -46,11 +46,21 @@ public class GweneiraCore extends ListenerAdapter {
         JDABuilder builder = JDABuilder.createDefault(token,
                 GatewayIntent.GUILD_MESSAGES,
                 GatewayIntent.DIRECT_MESSAGES,
-                GatewayIntent.MESSAGE_CONTENT
+                GatewayIntent.MESSAGE_CONTENT,
+                GatewayIntent.GUILD_MESSAGE_REACTIONS
         );
 
         builder.addEventListeners(core)
                 .setActivity(Activity.playing("With Gweneira ❄️"));
+
+        //register commands that are also event listener
+        for (SlashCommand cmd : core.commands) {
+            if (cmd instanceof ListenerAdapter listener) {
+                builder.addEventListeners(listener);
+                System.out.println("🔌 Added event listener for: " +
+                        cmd.getCommandData().getName());
+            }
+        }
 
         var jda = builder.build();
         jda.awaitReady();

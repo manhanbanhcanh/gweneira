@@ -59,14 +59,15 @@ public class GweneiraCore extends ListenerAdapter {
                 Activity.playing("with snowflakes ❄️"),
                 Activity.watching("over Gweneira's magic ✨"),
                 Activity.listening("to lo-fi beats 🎶"),
-                Activity.competing("the study tournament 🏆")
+                Activity.competing("the study tournament 🏆"),
+                Activity.customStatus("/gweneira for helps 💖")
         );
 
         Random random = new Random();
         ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
 
         builder.addEventListeners(core)
-                .setActivity(Activity.customStatus("/gweneira ❄️")); // initial status
+                .setActivity(Activity.customStatus("/gweneira for helps 💖")); // initial status
 
         // register commands that are also event listener
         for (SlashCommand cmd : core.commands) {
@@ -95,7 +96,7 @@ public class GweneiraCore extends ListenerAdapter {
                 // move to next, loop back when reaching the end
                 index = (index + 1) % activities.size();
             }
-        }, 0, 1, TimeUnit.MINUTES); // starts immediately, updates every 1 minute
+        }, 0, 30, TimeUnit.SECONDS); // starts immediately, updates every 1 minute
 
         // register slash commands
         if ("dev".equals(mode) && guildId != null && !guildId.isEmpty()) {

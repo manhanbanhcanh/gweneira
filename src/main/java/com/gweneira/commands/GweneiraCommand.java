@@ -20,13 +20,15 @@ public class GweneiraCommand implements SlashCommand {
                 .setTitle("❄️ Gweneira Bot Commands ❄️")
                 .setDescription(
                         """
-                        Here’s everything I can do ✨\n
-                        **/gweneira** → Show this magical help menu  
-                        **/study** → Start, pause, resume, and stop a study session 📝  
-                        **/reminder** → Set a reminder (DM or channel) ⏰  
-                        
-                        More commands coming soon... 🌸
-                        """
+                                Here’s everything I can do ✨\n
+                                **/gweneira** → Show this magical help menu  
+                                **/study** → Start, pause, resume, and stop a study session 📝  
+                                **/reminder** → Set a reminder (DM or channel) ⏰  
+                                **/poll** → Create a poll 📊 
+                                **/pollresult → Show the results of a poll 📊 
+                                
+                                More commands coming soon... 🌸
+                                """
                 )
                 .setColor(new Color(118, 255, 251))
                 .setFooter("Gweneira Bot • Made with ❤️", event.getJDA().getSelfUser().getEffectiveAvatarUrl());
